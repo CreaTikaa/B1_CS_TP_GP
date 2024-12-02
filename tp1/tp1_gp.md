@@ -415,6 +415,6 @@ template: web_server_down
 ```
 (valeurs si basses juste pour test)  
 
-**4/ Le reste : Voir sur Discord (invite envoyé en DM)**
+**4/ Le reste : Voir sur Discord (https://discord.gg/JQa7MHcAPq)**
 
 
