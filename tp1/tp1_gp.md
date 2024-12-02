@@ -413,7 +413,8 @@ template: web_server_down
       info: Web server is down
        to: admin
 ```
-(valeurs si basses juste pour test)
-4/ Le reste : Voir sur Discord (invite envoyé en DM)
+(valeurs si basses juste pour test)  
+
+**4/ Le reste : Voir sur Discord (invite envoyé en DM)**
 
 
