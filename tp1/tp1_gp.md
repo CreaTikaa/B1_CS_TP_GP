@@ -308,3 +308,112 @@ $ curl http://10.1.1.1:1907 | head
 
 **1. Installation**  
 1/ Installer Netdata
+```
+curl https://get.netdata.cloud/kickstart.sh > /tmp/netdata-kickstart.sh && sh /tmp/netdata-kickstart.sh --no-updates --stable-channel --disable-telemetry
+```
+
+**2. Un peu d'analyse de service**
+1/ Démarrer le service netdata
+```
+[crea@monitoring ~]$ sudo systemctl start netdata
+[crea@monitoring ~]$ sudo systemctl status netdata
+● netdata.service - Real time performance monitoring
+     Loaded: loaded (/usr/lib/systemd/system/netdata.service; enabled; preset: enabled)
+     Active: active (running) since Mon 2024-12-02 14:23:02 CET; 52s ago
+```
+2/ Déterminer sur quel port tourne Netdata
+```
+[crea@monitoring ~]$ sudo ss -lntp | grep "netdata"
+LISTEN 0      4096       127.0.0.1:8125       0.0.0.0:*    users:(("netdata",pid=2938,fd=43))
+LISTEN 0      4096         0.0.0.0:19999      0.0.0.0:*    users:(("netdata",pid=2938,fd=6))
+LISTEN 0      4096           [::1]:8125          [::]:*    users:(("netdata",pid=2938,fd=39))
+LISTEN 0      4096            [::]:19999         [::]:*    users:(("netdata",pid=2938,fd=7))
+```
+Ouvrir le port : 
+```
+[crea@monitoring ~]$ sudo firewall-cmd --permanent --add-port=19999/tcp
+sudo firewall-cmd --reload
+success
+success
+```
+3/ Visiter l'interface Web
+```
+crea@crea MINGW64 ~
+$ curl http://10.1.1.2:19999/ | head -n 7
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0<!doctype html><html lang="en" dir="ltr"><head><meta charset="utf-8"/><title>Netdata</title><script>const CONFIG = {
+      cache: {
+        agentInfo: false,
+        cloudToken: true,
+        agentToken: true,
+      }
+    }
+  6  106k    6  6929    0     0   196k      0 --:--:-- --:--:-- --:--:--  199k
+```
+**3. Ajouter un check** 
+sur web.tp1.b1 :  
+```
+[crea@web ~]$ sudo systemctl start nginx
+[crea@web ~]$ sudo ss -lntp | grep nginx
+LISTEN 0      511          0.0.0.0:1907       0.0.0.0:*    users:(("nginx",pid=1311,fd=6),("nginx",pid=1310,fd=6))
+```
+Conf:
+```
+[crea@monitoring netdata]$ sudo ./edit-config go.d/portcheck.conf
+Editing '/etc/netdata/go.d/portcheck.conf' …
+[crea@monitoring netdata]$ sudo systemctl restart netdata
+[crea@monitoring netdata]$ cat /etc/netdata//go.d/portcheck.conf | grep WEB_web.tp1.b1 -A 4
+  - name: WEB_web.tp1.b1
+    host: 10.1.1.1
+    ports:
+      - 1907
+```
+Conf finale : 
+```
+      - 1907
+
+  - name: SSH_web.tp1.b1
+    host: 10.1.1.1
+    ports:
+      - 22
+```
+**4. Ajouter des alertes**  
+1/ Configurer l'alerting avec Discord
+```
+# enable/disable sending discord notifications
+SEND_DISCORD="YES"
+
+# Create a webhook by following the official documentation -
+# https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks
+DISCORD_WEBHOOK_URL="https://discordapp.com/api/webhooks/1313151237184688158/tC-t1fgyPdGQKp_L_6BE7hr_5LVtpQRPa_q70xq4CqVWPTI7nzv2pO4f4TbnA2lWRlE5"
+
+# if a role's recipients are not configured, a notification will be send to
+# this discord channel (empty = do not send a notification for unconfigured
+# roles):
+DEFAULT_RECIPIENT_DISCORD="alerts"
+```
+2/ Test : 
+```
+RECEIVED HTTP RESPONSE CODE: 200
+time=2024-12-02T15:56:11.416+01:00 comm=alarm-notify.sh source=health level=info tid=14702 thread=alarm-notify msg_id=6db0018e83e34320ae2a659d78019fb7 node=monitoring.tp1.b1 instance=test.chart alert_id=1 alert_unique_id=1 alert=test_alarm alert_class=Test alert_recipient=alerts alert_duration=1 alert_value=100 alert_value_old=90 alert_status=CLEAR alert_value_old=CRITICAL alert_units=units alert_summary="a test alarm" alert_info="this is a test alarm to verify notifications work" request="'/usr/libexec/netdata/plugins.d/alarm-notify.sh' 'alerts' 'monitoring.tp1.b1' '1' '1' '3' '1733151370' 'test_alarm' 'test.chart' 'CLEAR' 'CRITICAL' '100' '90' '/usr/libexec/netdata/plugins.d/alarm-notify.sh' '1' '3' 'units' 'this is a test alarm to verify notifications work' 'new value' 'old value' 'evaluated expression' 'expression variable values' '0' '0' '' '' 'Test' 'command to edit the alarm=0=monitoring.tp1.b1' '' '' 'a test alarm' " msg="[ALERT NOTIFICATION]: sent discord notification to 'alerts' for notification to 'alerts' for transition from CRITICAL to CLEAR, of alert 'test_alarm' = 'new value', of instance 'test.chart', context '' on host 'monitoring.tp1.b1'"
+# OK
+```
+3/ Alerte si le site est down : 
+```
+template: web_server_down
+      on: portcheck.WEB_web.tp1.b1
+    lookup: average -10s unaligned of availability
+     every: 5s
+      warn: $this < 1
+      crit: $this < 1
+     delay: down 5s
+    repeat: every 5s
+     units: %
+      info: Web server is down
+       to: admin
+```
+(valeurs si basses juste pour test)
+4/ Le reste : Voir sur Discord (invite envoyé en DM)
+
+
