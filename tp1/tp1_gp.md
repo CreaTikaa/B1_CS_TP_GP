@@ -400,6 +400,7 @@ time=2024-12-02T15:56:11.416+01:00 comm=alarm-notify.sh source=health level=info
 # OK
 ```
 3/ Alerte si le site est down : 
+Dans le repo health.d, j'ai créer un file .conf et j'ai mis ça dedans :
 ```
 template: web_server_down
       on: portcheck.WEB_web.tp1.b1
