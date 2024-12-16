@@ -214,6 +214,32 @@ passwd: all authentication tokens updated successfully.
 [crea@node1 system]$ sudo chown yt:yt /var/log/yt/*
 ```
 
+**Bonus :**   
+Création de yt.timer aux côtés de yt.service avec comme contenu :
+```
+[Unit]
+Description=Timer pour yt.service, tout les jours
+
+[Timer]
+OnCalendar=daily
+Unit=yt.service
+
+[Install]
+WantedBy=timers.target
+```
+Puis
+```
+[crea@node1 system]$ sudo systemctl daemon-reload
+[crea@node1 system]$ sudo systemctl enable yt.timer
+Created symlink /etc/systemd/system/timers.target.wants/yt.timer → /etc/systemd/system/yt.timer.
+[crea@node1 system]$ systemctl status yt.timer
+○ yt.timer - Timer pour yt.service, tout les jours
+     Loaded: loaded (/etc/systemd/system/yt.timer; enabled; preset: disable>
+     Active: inactive (dead)
+    Trigger: n/a
+   Triggers: ● yt.service
+```
+
 
 
 
