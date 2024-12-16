@@ -200,7 +200,19 @@ File Path : /opt/yt/downloads/tomato anxiety/tomato anxiety.mp4
 ```
 
 **2. MAKE IT A SERVICE**  
-1/
+1/ Créer et gérer les permissions de yt
+```
+[crea@node1 system]$ sudo useradd yt
+[crea@node1 system]$ sudo passwd yt
+Changing password for user yt.
+New password:
+BAD PASSWORD: The password is shorter than 8 characters
+Retype new password:
+passwd: all authentication tokens updated successfully.
+[crea@node1 system]$ sudo usermod -s /sbin/nologin yt
+[crea@node1 system]$ sudo chown yt:yt /opt/yt/*
+[crea@node1 system]$ sudo chown yt:yt /var/log/yt/*
+```
 
 
 
