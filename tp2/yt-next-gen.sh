@@ -7,7 +7,7 @@ do
   else
      if [ ! -f "/var/log/yt/download.log" ]; then
        echo "Pas de fichier logs, vérifiez /var/log/yt/downloads.log"
-       exit 1
+       exit
      fi
 
      VIDEO_TITLE=$(yt-dlp --quiet --no-warnings --get-title $LINE)
