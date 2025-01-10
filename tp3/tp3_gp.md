@@ -16,7 +16,7 @@ exemple commande scp : scp -P 24913 "C:\Users\creat\Music\musics\Hollow_Soul.mp3
 [crea@music music]$ ls
 Hollow_Soul.mp3  Legends_Never_Die.mp3  True_Faith.mp3
 ```
-**2. Installation du service de streaming**
+**2. Installation du service de streaming**  
 3/ Installation Jellyfin
 ```
 [crea@music music]$ sudo dnf install jellyfin
