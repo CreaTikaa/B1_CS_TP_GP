@@ -312,7 +312,7 @@ lost+found  music_250115_100623.tar.gz
 [crea@music ~]$ ls /mnt/music_backup/
 lost+found  music_250115_100623.tar.gz
 ```
-*B. Sauvegarde à intervalles réguliers*
+*B. Sauvegarde à intervalles réguliers*  
 1/  Créer un nouveau service backup.service
 ```
 [crea@music ~]$ cd /etc/systemd/system
