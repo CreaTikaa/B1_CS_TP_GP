@@ -1,5 +1,7 @@
 # TP 3
 
+### Partie II : Serveur de streaming
+
 **1. Préparation de la machine**
 ```
 [crea@music ~]$ cd /srv
@@ -8,7 +10,7 @@
 [crea@music srv]$ ls
 music
 ```
-2/
+2/ Envoi des musiques
 ```
 exemple commande scp : scp -P 24913 "C:\Users\creat\Music\musics\Hollow_Soul.mp3" crea@10.3.1.11:/home/crea 
 [crea@music music]$ pwd
@@ -44,6 +46,7 @@ TODO:  CURL
 
 ### Partie III : Serveur de monitoring
 
+1/ Dérouler le script autoconfig.sh développé à la partie I
 ```
 [crea@vbox ~]$ sudo ./autoscript.sh monitoring.tp3.b1
 [sudo] password for crea:
@@ -68,7 +71,7 @@ LISTEN         0              128                             [::]:16677        
 ```
 curl https://get.netdata.cloud/kickstart.sh > /tmp/netdata-kickstart.sh && sh /tmp/netdata-kickstart.sh --no-updates --stable-channel --disable-telemetry
 ```
-3/
+3/ Configuration firewall
 ```
 [crea@monitoring ~]$ sudo systemctl start netdata
 [crea@monitoring ~]$ sudo ss -lntp
@@ -103,4 +106,8 @@ cd /etc/netdata 2>/dev/null || cd /opt/netdata/etc/netdata
 sudo ./edit-config health_alarm_notify.conf 
 ```
 Conf : 
-
+```
+SEND_DISCORD="YES"
+DISCORD_WEBHOOK_URL="https://discordapp.com/api/webhooks/1327329025798180975/w7T-wuUERA2CEsNTWhNnxfMQHAFHTvTp7THS5V4GSKSbka2E0MpOUyz3SDhOs90l-0V6"
+DEFAULT_RECIPIENT_DISCORD="alerts"
+```
