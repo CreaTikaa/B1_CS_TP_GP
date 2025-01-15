@@ -312,3 +312,53 @@ lost+found  music_250115_100623.tar.gz
 [crea@music ~]$ ls /mnt/music_backup/
 lost+found  music_250115_100623.tar.gz
 ```
+*B. Sauvegarde à intervalles réguliers*
+1/  Créer un nouveau service backup.service
+```
+[crea@music ~]$ cd /etc/systemd/system
+[crea@music system]$ sudo nano backup.service
+
+[Unit]
+Description=Backup service for Jellyfin
+
+[Service]
+Type=oneshot
+ExecStart=/opt/backup.sh
+
+[Install]
+WantedBy=multi-user.target
+
+[crea@music system]$ sudo systemctl daemon-reload
+```
+2/ Tester le nouveau service
+```
+[crea@music opt]$ sudo systemctl start backup
+[crea@music system]$ sudo systemctl restart backup
+
+Every 0.1s: ls -al                                                                                                   backup.tp3.b1: Wed Jan 15 10:53:16 2025
+total 99164
+drwxr-xr-x. 3 crea root     4096 Jan 15 10:52 .
+drwxr-xr-x. 3 root root       20 Jan 15 08:44 ..
+-rw-r--r--. 1 crea crea        4 Jan 15 10:48 kkk
+drwx------. 2 crea crea    16384 Jan 15 08:43 lost+found
+-rw-r--r--. 1 crea crea        3 Jan 15 10:51 meo
+-rw-r--r--. 1 crea crea 12686705 Jan 15 10:06 music_250115_100623.tar.gz
+-rw-r--r--. 1 crea crea 12686705 Jan 15 10:24 music_250115_102403.tar.gz
+-rw-r--r--. 1 crea crea 12686705 Jan 15 10:42 music_250115_104237.tar.gz
+-rw-r--r--. 1 crea crea 12686705 Jan 15 10:43 music_250115_104340.tar.gz
+-rw-r--r--. 1 crea crea 12686805 Jan 15 10:51 music_250115_105115.tar.gz
+-rw-r--r--. 1 crea crea 12686805 Jan 15 10:51 music_250115_105152.tar.gz
+-rw-r--r--. 1 crea crea 12686805 Jan 15 10:52 music_250115_105210.tar.gz
+-rw-r--r--. 1 crea crea 12686805 Jan 15 10:52 music_250115_105226.tar.gz
+```
+3/ Configurer un lancement automatique du service à intervalles régulier
+```
+Description=Timer for backup
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+```
