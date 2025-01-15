@@ -309,4 +309,6 @@ Sur backup.tp3.b1 :
 [crea@backup ~]$ cd /mnt/backup/
 [crea@backup backup]$ ls
 lost+found  music_250115_100623.tar.gz
+[crea@music ~]$ ls /mnt/music_backup/
+lost+found  music_250115_100623.tar.gz
 ```
