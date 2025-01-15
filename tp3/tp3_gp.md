@@ -42,7 +42,27 @@ success
 [crea@music music]$ sudo firewall-cmd --reload
 success
 ```
-TODO:  CURL
+Curl : 
+```
+<!doctype html>
+<html class="preload">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+    <link rel="manifest" href="64d966784cd77b03a79c.json">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="msapplication-tap-highlight" content="no">
+    <meta http-equiv="X-UA-Compatibility" content="IE=Edge">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Jellyfin">
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <meta name="referrer" content="no-referrer">
+    <meta property="og:title" content="Jellyfin">
+    <meta property="og:site_name" content="Jellyfin">
+    <meta property="og:url" content="http://jellyfin.org">
+   ```
 
 ### Partie III : Serveur de monitoring
 
