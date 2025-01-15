@@ -131,3 +131,182 @@ SEND_DISCORD="YES"
 DISCORD_WEBHOOK_URL="https://discordapp.com/api/webhooks/1327329025798180975/w7T-wuUERA2CEsNTWhNnxfMQHAFHTvTp7THS5V4GSKSbka2E0MpOUyz3SDhOs90l-0V6"
 DEFAULT_RECIPIENT_DISCORD="alerts"
 ```
+**3. Gestion du disque dur**  
+
+1/ Partionner le disque dur
+```
+[crea@backup ~]$ sudo pvcreate /dev/sdb
+[sudo] password for crea:
+  Physical volume "/dev/sdb" successfully created.
+[crea@backup ~]$ sudo pvs
+  PV         VG      Fmt  Attr PSize   PFree
+  /dev/sda2  rl_vbox lvm2 a--  <19.00g    0
+  /dev/sdb           lvm2 ---    5.00g 5.00g
+
+[crea@backup ~]$ sudo vgcreate data /dev/sdb
+  Volume group "data" successfully created
+[crea@backup ~]$ sudo vgs
+  VG      #PV #LV #SN Attr   VSize   VFree
+  data      1   0   0 wz--n-  <5.00g <5.00g
+  rl_vbox   1   2   0 wz--n- <19.00g     0
+
+[crea@backup ~]$ sudo lvcreate -L 5000MB data -n backup_data
+  Logical volume "backup_data" created.
+[crea@backup ~]$ sudo lvs
+  LV          VG      Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  backup_data data    -wi-a-----   4.88g
+
+  root        rl_vbox -wi-ao---- <17.00g
+
+  swap        rl_vbox -wi-ao----   2.00g
+```
+2/ Formater la partition créée
+```
+[crea@backup ~]$ sudo mkfs -t ext4 /dev/data/backup_data
+mke2fs 1.46.5 (30-Dec-2021)
+Creating filesystem with 1280000 4k blocks and 320000 inodes
+Filesystem UUID: f6b16000-c345-485b-87b2-c5ed38e136e9
+Superblock backups stored on blocks:
+        32768, 98304, 163840, 229376, 294912, 819200, 884736
+
+Allocating group tables: done
+Writing inode tables: done
+Creating journal (16384 blocks): done
+Writing superblocks and filesystem accounting information: done
+```
+3/ Monter la partition
+```
+[crea@backup ~]$ sudo mkdir /mnt/backup
+[crea@backup ~]$ sudo mount /dev/data/backup_data /mnt/backup
+[crea@backup ~]$ df -h
+Filesystem                    Size  Used Avail Use% Mounted on
+devtmpfs                      4.0M     0  4.0M   0% /dev
+tmpfs                         888M     0  888M   0% /dev/shm
+tmpfs                         355M  5.7M  350M   2% /run
+/dev/mapper/rl_vbox-root       17G  1.4G   16G   8% /
+/dev/sda1                     960M  230M  731M  24% /boot
+tmpfs                         178M     0  178M   0% /run/user/1000
+/dev/mapper/data-backup_data  4.8G   24K  4.5G   1% /mnt/backup
+```
+4/ Configurer un montage automatique de la partition
+```
+[crea@backup ~]$ nano /etc/fstab
+[crea@backup ~]$ sudo nano /etc/fstab (oui vim c'est mieux je sais)
+```
+Ajout de : ```/dev/data/backup_data /mnt/backup       ext4    defaults        0       0```
+dans /etc/fstab
+```
+[crea@backup ~]$ sudo umount /mnt/backup
+[crea@backup ~]$ sudo mount -av
+/                        : ignored
+/boot                    : already mounted
+none                     : ignored
+mount: /mnt/backup does not contain SELinux labels.
+       You just mounted a file system that supports labels which does not
+       contain labels, onto an SELinux box. It is likely that confined
+       applications will generate AVC messages and not be allowed access to
+       this file system.  For more details see restorecon(8) and mount(8).
+mount: (hint) your fstab has been modified, but systemd still uses
+       the old version; use 'systemctl daemon-reload' to reload.
+/mnt/backup              : successfully mounted
+```
+
+**4. Service NFS**  
+*A. El servor*  
+1/ Installation 
+```
+sudo dnf install nfs-utils -y
+``` 
+2/ Export
+```
+[crea@backup ~]$ sudo nano /etc/exports
+```
+Ajout de la ligne suivante : 
+```
+/mnt/backup     10.3.1.11(rw,sync,no_subtree_check)
+```
+```
+[crea@backup ~]$ sudo systemctl enable nfs-server
+Created symlink /etc/systemd/system/multi-user.target.wants/nfs-server.service → /usr/lib/systemd/system/nfs-server.service.
+[crea@backup ~]$ sudo systemctl start nfs-server
+[crea@backup ~]$ sudo systemctl status nfs-server
+● nfs-server.service - NFS server and services
+     Loaded: loaded (/usr/lib/systemd/system/nfs-server.service; enabled; p>
+    Drop-In: /run/systemd/generator/nfs-server.service.d
+             └─order-with-mounts.conf
+     Active: active (exited) since Wed 2025-01-15 08:58:30 CET; 5s ago
+```
+3/ Configuration Firewall
+```
+[crea@backup ~]$ sudo firewall-cmd --permanent --add-service=nfs
+success
+[crea@backup ~]$ sudo firewall-cmd --permanent --add-service=mountd
+success
+[crea@backup ~]$ sudo firewall-cmd --permanent --add-service=rpc-bind
+success
+[crea@backup ~]$ sudo firewall-cmd --reload
+success
+[crea@backup ~]$ sudo firewall-cmd --permanent --list-all | grep services
+  services: cockpit dhcpv6-client mountd nfs rpc-bind ssh
+```
+4/ Ports NFS
+```
+[crea@backup ~]$ sudo ss -lntp | grep "rpc"
+LISTEN 0      4096         0.0.0.0:48723      0.0.0.0:*    users:(("rpc.statd",pid=11919,fd=8))
+LISTEN 0      4096         0.0.0.0:20048      0.0.0.0:*    users:(("rpc.mountd",pid=11923,fd=5))
+LISTEN 0      4096         0.0.0.0:111        0.0.0.0:*    users:(("rpcbind",pid=11917,fd=4),("systemd",pid=1,fd=45))
+LISTEN 0      4096            [::]:20048         [::]:*    users:(("rpc.mountd",pid=11923,fd=7))
+LISTEN 0      4096            [::]:33473         [::]:*    users:(("rpc.statd",pid=11919,fd=10))
+LISTEN 0      4096            [::]:111           [::]:*    users:(("rpcbind",pid=11917,fd=6),("systemd",pid=1,fd=47))
+LISTEN   0        64                   [::]:2049                [::]:*
+```
+*B. El cliente*
+
+1/  Installer les outils NFS
+```
+[crea@music ~]$ sudo dnf install nfs-utils
+```
+2/ Essayer d'accéder au dossier partagé
+
+```
+[crea@music mnt]$ sudo mkdir /mnt/music_backup
+[crea@music ~]$ sudo mount 10.3.1.13:/mnt/backup /mnt/music_backup
+[crea@music ~]$ cd /mnt/music_backup/
+[crea@music music_backup]$ touch test.txt
+[crea@music music_backup]$ ls
+lost+found  test.txt
+[crea@music music_backup]$ echo salut > test.txt
+[crea@music music_backup]$ echo salut salut > test.txt
+[crea@music music_backup]$ cat test.txt
+salut salut
+[crea@music music_backup]$ rm -f test.txt
+[crea@music music_backup]$ ls
+lost+found
+```
+3/ Configurer un montage automatique
+Nouvelle entrée dans /etc/fstab :
+```
+10.3.1.13:/mnt/backup /mnt/music_backup       nfs     defaults       0	    0
+```
+
+**5. Service de backup**  
+
+*A. Script de sauvegarde*
+1/ Script backup.sh
+Sur music.tp3.b1 : 
+```
+[crea@music opt]$ ./backup.sh
+Script Launched !
+tar: Removing leading `/' from member names
+/srv/music/
+/srv/music/Hollow_Soul.mp3
+/srv/music/Legends_Never_Die.mp3
+/srv/music/True_Faith.mp3
+If you don't have big red text on your screen, everything went well !
+```
+Sur backup.tp3.b1 : 
+```
+[crea@backup ~]$ cd /mnt/backup/
+[crea@backup backup]$ ls
+lost+found  music_250115_100623.tar.gz
+```
